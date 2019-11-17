@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 }
 
-###################2nd Activity#######################################
+################################# RegisterActivity.java #######################################
 
 package com.example.intent_and_toast;
 
