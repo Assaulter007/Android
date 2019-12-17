@@ -1,0 +1,131 @@
+public class MainActivity extends AppCompatActivity {
+    Button b;
+    ListView lv;
+    ArrayList<HashMap<String, String>> contactList;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        contactList = new ArrayList<>();
+        lv= findViewById(R.id.list);
+        b=  findViewById(R.id.fetch);
+        b.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String strUrl = "https://api.androidhive.info/contacts/";
+                new UrlHandler().execute(strUrl); } });
+        registerForContextMenu(lv);
+    }
+
+    public class UrlHandler extends AsyncTask<String, Integer, String> {
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            ListAdapter adapter = new SimpleAdapter(MainActivity.this,
+                    contactList, R.layout.list_item, new String[]{ "id","name","email"},
+                    new int[]{R.id.cid,R.id.cname, R.id.cemail});
+            lv.setAdapter(adapter);
+        }
+        @Override
+        protected String doInBackground(String... params) {
+            String json_response = null;
+            try {
+                URL url = new URL(params[0]);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.connect();
+                InputStream in = new BufferedInputStream(connection.getInputStream());
+                json_response = convertStreamToString(in);
+                if (json_response != null) {
+                    try {
+                        JSONObject jsonObj = new JSONObject(json_response); // Getting JSON Array node
+                         JSONArray contacts = jsonObj.getJSONArray("contacts"); // looping through All Contacts
+                         for (int i = 0; i < contacts.length(); i++) {
+                             JSONObject c = contacts.getJSONObject(i);
+                             String id = c.getString("id");
+                             String name = c.getString("name");
+                             String email = c.getString("email"); // tmp hash map for single contact
+                             HashMap<String, String> contact = new HashMap<>(); // adding each child node to HashMap key => value
+                             contact.put("id", id);
+                             contact.put("name", name);
+                             contact.put("email", email); // adding contact to contact list
+                             contactList.add(contact);
+                         }
+                    } catch (JSONException e) {
+                        Log.e("error", "Json parsing error: " + e.getMessage());
+                    }
+                } else {
+                    Log.e("error", "Couldn't get json from server.");
+                }
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+        private String convertStreamToString(InputStream is) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            try {
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line).append('\n');
+                }
+            } catch (IOException e) { e.printStackTrace();
+            }
+            return sb.toString();
+        }
+    }
+}
+
+############################# activity_main.xml ########################################
+
+<Button
+        android:id="@+id/fetch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/fetch_data"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+    </Button>
+
+    <ListView
+        android:id="@+id/list"
+        android:layout_width="402dp"
+        android:layout_height="600dp"
+        android:layout_marginTop="42dp"
+        android:layout_marginBottom="48dp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/fetch">
+
+    </ListView>
+    
+    ##################### list_item.xml ################################
+    
+    <?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/cid" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/cname" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/cemail" />
+
+</LinearLayout>
