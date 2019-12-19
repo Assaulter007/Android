@@ -1,60 +1,74 @@
 ################################### MainActivity.java #########################################
 public class MainActivity extends AppCompatActivity {
-    private NotificationManagerCompat mNotificationManagerCompat;
-    public static final String CID = "channe1";
-    String phone, name;
+
+    Button but,readContact;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mNotificationManagerCompat = NotificationManagerCompat.from(this);
+        but = (Button) findViewById(R.id.but1);
+        but.setOnClickListener(new View.OnClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+            @Override
+            public void onClick(View v) {
+                Intent int1 = new Intent();
+                PendingIntent pi1 = PendingIntent.getActivity(MainActivity.this, 0, int1, 0);
+                Notification not1 = new Notification.Builder(MainActivity.this)
+                        .setTicker("Ticker Title")
+                        .setContentTitle("Notification")
+                        .setContentText("This is Notification Example")
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .addAction(R.mipmap.ic_launcher, "Action 1", pi1)
+                        .addAction(R.mipmap.ic_launcher_round, "Action 2", pi1)
+                        .setContentIntent(pi1).getNotification();
+                not1.flags = Notification.FLAG_AUTO_CANCEL;
+                NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                assert nm != null;
+                nm.notify(0, not1);
+            }
+        });
+
+
+        readContact = (Button) findViewById(R.id.but2);
+        readContact.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+                startActivityForResult(intent, 1);
+            }
+        });
+
+
     }
 
-    public void notif() {
-        Notification not1 = new NotificationCompat.Builder(this, CID)
-                .setContentTitle(name)
-                .setContentText(phone)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .build();
-        mNotificationManagerCompat.notify(1, not1);
-    }
+    public void onActivityResult(int reqCode, int resultCode, Intent data) {
+        super.onActivityResult(reqCode, resultCode, data);
+        if (reqCode == 1) {
+            if (resultCode == Activity.RESULT_OK) {
+                Uri contactData = data.getData();
+                Cursor c = managedQuery(contactData, null, null, null, null);
+                if (c.moveToFirst()) {
+                    String id = c.getString(c.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
+                    String hasPhone = c.getString(c.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER));
 
-    public void contacts(View v) {
-        Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
-        startActivityForResult(intent, 1);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode,Intent data) {
-        if(resultCode==RESULT_OK)
-            if(requestCode == 1)
-                contactpicked(data);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    public void contactpicked(Intent data){
-        Cursor cursor;
-        try{
-            Uri uri=data.getData();
-            cursor=getContentResolver().query(uri,null,null,null);
-            cursor.moveToFirst();
-            int temp = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-            phone=cursor.getString(temp);
-
-            temp = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
-            name=cursor.getString(temp);
-
-            Toast.makeText(getApplicationContext(),name+"\n"+phone,Toast.LENGTH_SHORT).show();
-            notif();
-
-        } catch (Exception e) {
-            e.printStackTrace();
+                    if (hasPhone.equalsIgnoreCase("1")) {
+                        Cursor phones = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = " + id, null, null);
+                        assert phones != null;
+                        phones.moveToFirst();
+                        String cNumber = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                        Toast.makeText(getApplicationContext(), cNumber, Toast.LENGTH_SHORT).show();
+                        //setCn(cNumber);
+                    }
+                }
+            }
         }
+
     }
+
+
 }
 
 ################################### activity_main.xml #########################################
@@ -68,17 +82,73 @@ public class MainActivity extends AppCompatActivity {
     tools:context=".MainActivity">
 
     <Button
-        android:id="@+id/button2"
-        android:layout_width="match_parent"
+        android:id="@+id/but1"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentLeft="true"
-        android:onClick="contacts"
-        android:text="Contacts"
+        android:layout_marginStart="157dp"
+        android:layout_marginLeft="157dp"
+        android:layout_marginTop="178dp"
+        android:layout_marginEnd="158dp"
+        android:layout_marginRight="158dp"
+        android:layout_marginBottom="115dp"
+        android:text="Notify Me"
+        app:layout_constraintBottom_toTopOf="@+id/but2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/but2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+
+        android:layout_alignParentLeft="true"
+        android:layout_marginStart="112dp"
+        android:layout_marginLeft="112dp"
+        android:layout_marginTop="115dp"
+        android:layout_marginEnd="113dp"
+        android:layout_marginRight="113dp"
+        android:layout_marginBottom="342dp"
+        android:text="Read Shared Contact"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.527"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/but1" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+#####################################AndroidManifest.xml####################################################
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.example.p6">
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
+    <uses-permission android:name="android.permission.WRITE_CONTACTS"/>
+    <!-- Read Contacts from phone -->
+    <uses-permission android:name="android.permission.read_contacts" />
+    <uses-permission android:name="android.permission.read_phone_state" />
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
